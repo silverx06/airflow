@@ -1,0 +1,10 @@
+awscli
+Cython
+pyOpenSSL
+psycopg2
+sqlalchemy
+future
+flask_bcrypt
+boto3
+requests
+apache-airflow[devel,devel_hadoop,celery,crypto,hdfs,hive,kerberos,ldap,postgres,s3,slack,redis]==1.9.0

@@ -1,0 +1,25 @@
+version: '2.1'
+services:
+    postgres:
+        image: postgres:9.6
+        environment:
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+    webserver:
+        image: localhost:5000/airflow-hadoop:latest
+        container_name: airflow
+        restart: always
+        depends_on:
+            - postgres
+        volumes:
+            - ./dags:/airflow/dags
+        ports:
+            - "80:80"
+        command: ["airflow","webserver","resetdb","-y"]
+        healthcheck:
+            test: ["CMD-SHELL", "[ -f /airflow/airflow-webserver.pid ]"]
+            interval: 30s
+            timeout: 30s
+            retries: 3
+        entrypoint: /bin/bash /usr/local/src/shell/wait-for-db.sh postgres /usr/local/bin/entrypoint.sh
