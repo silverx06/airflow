@@ -2,9 +2,12 @@ FROM python:3.6.5-stretch
 
 MAINTAINER silverx06 
 
-ADD shell /usr/local/src/
-ADD config /usr/local/src/
-ADD libs /usr/local/src/
+RUN set -x && \ 
+    mkdir /usr/local/src/{shell,conf,libs}
+
+COPY shell /usr/local/src/shell
+COPY conf /usr/local/src/conf
+COPY libs /usr/local/src/libs
 
 ENV HADOOP_HOME /opt/hadoop
 ENV PATH ${PATH}:${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin
@@ -38,14 +41,13 @@ RUN set -x && \
     apt-get update && \
     apt-get install -t jessie-backports --no-install-recommends -y openjdk-8-jre-headless && \
     rm -rf /var/lib/apt/lists/* && \
-    pip install --no-cache-dir -r /usr/local/src/config/requirements.txt && \
-    [ -f /usr/local/src/libs/*.whl ] && pip install --no-cache-dir /usr/local/src/libs/*.whl && \
+    pip install --no-cache-dir -r /usr/local/src/conf/requirements.txt && \
     mkdir -p ${AIRFLOW_DAG} && \
     /bin/bash -x /usr/local/src/shell/install-hadoop.sh ${HADOOP_VERSION} ${SPARK_VERSION} ${SPARK_HOME} && \
     /bin/bash -x /usr/local/src/shell/initial.sh && \
     echo SPARK_HOME is ${SPARK_HOME} && \
     ls -al --g ${SPARK_HOME} && \
-    ls -la /
+    [ -f /usr/local/src/libs/*.whl ] && pip install --no-cache-dir /usr/local/src/libs/*.whl 
 
 RUN ["chmod", "+x", "/usr/local/bin/entrypoint.sh"]
 
