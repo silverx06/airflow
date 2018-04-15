@@ -46,8 +46,8 @@ RUN set -x && \
     /bin/bash -x /usr/local/src/shell/install-hadoop.sh ${HADOOP_VERSION} ${SPARK_VERSION} ${SPARK_HOME} && \
     /bin/bash -x /usr/local/src/shell/initial.sh && \
     echo SPARK_HOME is ${SPARK_HOME} && \
-    ls -al --g ${SPARK_HOME} && \
-    [ -f /usr/local/src/libs/*.whl ] && pip install --no-cache-dir /usr/local/src/libs/*.whl 
+    ls -al --g ${SPARK_HOME}
+#    [ -f /usr/local/src/libs/*.whl ] && pip install --no-cache-dir /usr/local/src/libs/*.whl 
 
 RUN ["chmod", "+x", "/usr/local/bin/entrypoint.sh"]
 
