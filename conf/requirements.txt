@@ -2,6 +2,7 @@ awscli
 Cython
 pyOpenSSL
 psycopg2
+psycopg2-binary
 sqlalchemy
 future
 flask_bcrypt

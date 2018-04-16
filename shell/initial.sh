@@ -9,3 +9,4 @@ mv /usr/local/src/shell/entrypoint.sh /usr/local/bin/
 if [ -f /usr/local/src/libs/*.whl ]; then
   pip install --no-cache-dir /usr/local/src/libs/*.whl
 fi
+rm -Rf /usr/local/src/*

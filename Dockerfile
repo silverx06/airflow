@@ -3,7 +3,9 @@ FROM python:3.6.5-stretch
 MAINTAINER silverx06 
 
 RUN set -x && \ 
-    mkdir /usr/local/src/{shell,conf,libs}
+    mkdir -p /usr/local/src/shell && \
+    mkdir -p /usr/local/src/conf && \
+    mkdir -p /usr/local/src/libs
 
 COPY shell /usr/local/src/shell
 COPY conf /usr/local/src/conf
