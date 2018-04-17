@@ -37,6 +37,20 @@ fi
 
 [ -f /airflow/default.json ] && airflow variables -j -i /airflow/default.json
 
+[ -f /airflow/db.conf ] && source /airflow/db.conf
+
+[ -e ${CONN_ID} ] && [ -e ${CONN_TYPE} ] \
+&& [ -e ${CONN_HOST} ] && [ -e ${CONN_PORT} ] \
+&& [ -e ${CONN_USER} ] && [ -e ${CONN_PASSWORD} ] \
+&& [ -e ${CONN_DB} ] \
+&& airflow connections --conn_id ${CONN_ID} \
+                       --conn_type ${CONN_TYPE} \
+                       --conn_host ${CONN_HOST} \
+                       --conn_login ${CONN_USER} \
+                       --conn_password ${CONN_PASSWORD} \
+                       --conn_schema ${CONN_DB} \
+                       --conn_port ${CONN_PORT}
+
 airflow ${TARGET} ${PORT}
 
 $@

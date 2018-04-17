@@ -9,4 +9,15 @@ mv /usr/local/src/shell/entrypoint.sh /usr/local/bin/
 if [ -f /usr/local/src/libs/*.whl ]; then
   pip install --no-cache-dir /usr/local/src/libs/*.whl
 fi
+
+icat <<__EOF__ > /airflow/db.conf
+CONN_ID=${CONN_ID}
+CONN_TYPE=${CONN_TYPE}
+CONN_HOST=${CONN_HOST}
+CONN_USER=${CONN_USER}
+CONN_PASSWORD=${CONN_PASSWORD}
+CONN_DB=${CONN_DB}
+CONN_PORT=${CONN_PORT}
+__EOF__
+
 rm -Rf /usr/local/src/*
