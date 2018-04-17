@@ -17,6 +17,7 @@ do
     if [ -e ${1} ]; then
       if ( [ "${1}x" == "webserverx" ] \
            || [ "${1}x" == "schedulerx" ] \
+           || [ "${1}x" == "flowerx" ] \
            || [ "${1}x" == "targetx" ] ) then
         TARGET=${1}
       fi
