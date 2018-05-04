@@ -1,5 +1,7 @@
-version: '2.1'
+version: '3.0'
 services:
+    redis:
+        image: 'redis:3.2.7'
     postgres:
         image: postgres:9.6
         environment:
@@ -7,19 +9,90 @@ services:
             - POSTGRES_PASSWORD=airflow
             - POSTGRES_DB=airflow
     webserver:
-        image: localhost:5000/airflow-hadoop:latest
-        container_name: airflow
+        image: silverx06/airflow:latest
+        container_name: webserver
         restart: always
+        environment:
+            - SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+#            - SQL_ALCHEMY_CONN=mysql://airflow:airflow@mysql/airflow
+#            - SQL_ALCHEMY_CONN=sqlite:///airflow.db
+            - CONN_ID=connection_postgres
+            - CONN_TYPE=postgres
+            - CONN_PASSWORD=airflow
+            - CONN_HOST=postgres
+            - CONN_USER=airflow
+            - CONN_DB=airflow
+            - CONN_PORT=5432
+            - REDIS_CONN_HOST=postgres
+            - REDIS_CONN_PORT=5432
         depends_on:
+            - redis
             - postgres
         volumes:
             - ./dags:/airflow/dags
+            - ./variables:/airflow/variables
         ports:
-            - "80:80"
-        command: ["airflow","webserver","resetdb","-y"]
+            - 80:8080
+        command: webserver
         healthcheck:
             test: ["CMD-SHELL", "[ -f /airflow/airflow-webserver.pid ]"]
             interval: 30s
             timeout: 30s
             retries: 3
-        entrypoint: /bin/bash /usr/local/src/shell/wait-for-db.sh postgres /usr/local/bin/entrypoint.sh
+    scheduler:
+        image: silverx06/airflow:latest
+        container_name: scheduler
+        restart: always
+        environment:
+            - SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+            - CONN_TYPE=postgres
+            - CONN_PASSWORD=airflow
+            - CONN_HOST=postgres
+            - CONN_USER=airflow
+            - CONN_DB=airflow
+            - CONN_PORT=5432
+            - REDIS_CONN_HOST=postgres
+            - REDIS_CONN_PORT=5432
+        depends_on:
+            - webserver
+        volumes:
+            - ./dags:/airflow/dags
+        command: scheduler
+    worker:
+        image: silverx06/airflow:latest
+        container_name: worker
+        restart: always
+        environment:
+            - SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+            - CONN_TYPE=postgres
+            - CONN_PASSWORD=airflow
+            - CONN_HOST=postgres
+            - CONN_USER=airflow
+            - CONN_DB=airflow
+            - CONN_PORT=5432
+            - REDIS_CONN_HOST=postgres
+            - REDIS_CONN_PORT=5432
+        depends_on:
+            - webserver
+        volumes:
+            - ./dags:/airflow/dags
+        command: worker
+    flower:
+        image: silverx06/airflow:latest
+        container_name: flower
+        restart: always
+        environment:
+            - SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+            - CONN_TYPE=postgres
+            - CONN_PASSWORD=airflow
+            - CONN_HOST=postgres
+            - CONN_USER=airflow
+            - CONN_DB=airflow
+            - CONN_PORT=5432
+            - REDIS_CONN_HOST=postgres
+            - REDIS_CONN_PORT=5432
+        depends_on:
+            - webserver
+        volumes:
+            - ./dags:/airflow/dags
+        command: flower

@@ -1,57 +1,76 @@
 #!/bin/bash
 
-TARGET=webserver
-PORT=""
-INIT_FLG=0
+TARGET=${1}
 
-while [ $# -gt 0 ]
-do
-  if [ "${1}x" == "-px" ]; then
-    shift
-    if [ -e ${1} ]; then
-      PORT="-p ${1}"
-    fi
-  fi
-  if [ "${1}x" == "-tx" ]; then
-    shift
-    if [ -e ${1} ]; then
-      if ( [ "${1}x" == "webserverx" ] \
-           || [ "${1}x" == "schedulerx" ] \
-           || [ "${1}x" == "flowerx" ] \
-           || [ "${1}x" == "targetx" ] ) then
-        TARGET=${1}
-      fi
-    fi
-  fi
-  if [ "${1}x" == "--initx" ]; then
-    shift
-    INIT_FLG=1
-  fi
-  shift
-done
+function check_redis() {
+    /airflow/wait-for-db.sh -t redis
+}
 
-if ( [ "${TARGET}x" == "webserverx" ] || [ "${PORT}x" == "x" ] ) then
-  PORT="-p 8080"
-fi
+function check_db() {
+    /airflow/wait-for-db.sh
+}
 
-[ ${INIT_FLG} -eq 1 ] && airflow initdb
+case ${TARGET} in
+  webserver)
+    check_redis
+    check_db
+    airflow initdb &
 
-[ -f /airflow/default.json ] && airflow variables -j -i /airflow/default.json
+    sleep 10
+    for F in `ls -1 /airflow/variables/*.json 2>/dev/null`
+    do
+      airflow variables -j -i \${F};
+    done 
 
-[ -f /airflow/db.conf ] && source /airflow/db.conf
+    [ -e ${CONN_ID} ] && [ -e ${CONN_TYPE} ] \
+      && [ -e ${CONN_HOST} ] && [ -e ${CONN_PORT} ] \
+      && [ -e ${CONN_USER} ] && [ -e ${CONN_PASSWORD} ] \
+      && [ -e ${CONN_DB} ] && sleep 10 \
+      && airflow connections --conn_id ${CONN_ID} \
+                             --conn_type ${CONN_TYPE} \
+                             --conn_host ${CONN_HOST} \
+                             --conn_login ${CONN_USER} \
+                             --conn_password ${CONN_PASSWORD} \
+                             --conn_schema ${CONN_DB} \
+                             --conn_port ${CONN_PORT}
 
-[ -e ${CONN_ID} ] && [ -e ${CONN_TYPE} ] \
-&& [ -e ${CONN_HOST} ] && [ -e ${CONN_PORT} ] \
-&& [ -e ${CONN_USER} ] && [ -e ${CONN_PASSWORD} ] \
-&& [ -e ${CONN_DB} ] \
-&& airflow connections --conn_id ${CONN_ID} \
-                       --conn_type ${CONN_TYPE} \
-                       --conn_host ${CONN_HOST} \
-                       --conn_login ${CONN_USER} \
-                       --conn_password ${CONN_PASSWORD} \
-                       --conn_schema ${CONN_DB} \
-                       --conn_port ${CONN_PORT}
+    airflow webserver
+    ;;
+  scheduler)
+    check_redis
+    airflow scheduler
+    ;;
+  worker)
+    check_redis
+    airflow worker
+    ;;
+  flower)
+    check_redis
+    airflow flower
+    ;;
+  standalone)
+    check_redis
+    check_db
+    airflow initdb &
+    for F in `ls -1 /airflow/variables/*.json 2>/dev/null`
+    do
+      airflow variables -j -i \${F};
+    done 
 
-airflow ${TARGET} ${PORT}
-
-$@
+    [ -e ${CONN_ID} ] && [ -e ${CONN_TYPE} ] \
+      && [ -e ${CONN_HOST} ] && [ -e ${CONN_PORT} ] \
+      && [ -e ${CONN_USER} ] && [ -e ${CONN_PASSWORD} ] \
+      && [ -e ${CONN_DB} ] && sleep 10 \
+      && airflow connections --conn_id ${CONN_ID} \
+                             --conn_type ${CONN_TYPE} \
+                             --conn_host ${CONN_HOST} \
+                             --conn_login ${CONN_USER} \
+                             --conn_password ${CONN_PASSWORD} \
+                             --conn_schema ${CONN_DB} \
+                             --conn_port ${CONN_PORT}
+    airflow webserver &
+    airflow scheduler &
+    airflow worker &
+    airflow flower
+    ;;
+esac 

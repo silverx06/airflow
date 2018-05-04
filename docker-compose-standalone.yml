@@ -1,0 +1,41 @@
+version: '3.0'
+services:
+    redis:
+        image: 'redis:3.2.7'
+    postgres:
+        image: postgres:9.6
+        environment:
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+    airflow:
+        image: silverx06/airflow:latest
+        container_name: airflow
+        restart: always
+        environment:
+            - SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+#            - SQL_ALCHEMY_CONN=mysql://airflow:airflow@mysql/airflow
+#            - SQL_ALCHEMY_CONN=sqlite:///airflow.db
+            - CONN_ID=connection_postgres
+            - CONN_TYPE=postgres
+            - CONN_PASSWORD=airflow
+            - CONN_HOST=postgres
+            - CONN_USER=airflow
+            - CONN_DB=airflow
+            - CONN_PORT=5432
+            - REDIS_CONN_HOST=postgres
+            - REDIS_CONN_PORT=5432
+        depends_on:
+            - redis
+            - postgres
+        volumes:
+            - ./dags:/airflow/dags
+            - ./variables:/airflow/variables
+        ports:
+            - 80:8080
+        command: standalone
+        healthcheck:
+            test: ["CMD-SHELL", "[ -f /airflow/airflow-webserver.pid ]"]
+            interval: 30s
+            timeout: 30s
+            retries: 3
